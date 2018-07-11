@@ -109,7 +109,7 @@ func getScore(board Board, m Move)int{
 	return score
 }
 
-getBestMove(board Board, moves []Move)(int, Move){
+getMaxMove(board Board, moves []Move)(int, Move){
 	top_score := -200
 	var best_move Move
 	for _, move := range moves {
@@ -120,6 +120,31 @@ getBestMove(board Board, moves []Move)(int, Move){
 		}
 	}
 	return top_score, best_move
+}
+
+getMinMove(board Board, moves []Move)(int, Move){
+	top_score := -200
+	var best_move Move
+	for _, move := range moves {
+		score := getScore(board, move)
+		if score >= top_score{
+			top_score = score
+			best_move = move
+		}
+	}
+	return top_score, best_move
+}
+
+getBestMove(board Board, moves []Move)(int, Move){
+	trial_board = b.Clone()
+	highscore, move = minMax(trial_board, moves)
+	return score, move
+}
+
+minMax(board Board, moves []Move)(int, Move){
+	for _, move := range moves{
+		
+	}
 }
 
 type Piece int8
