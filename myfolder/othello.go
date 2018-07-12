@@ -9,7 +9,7 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	//"math/rand"
 	"net/http"
 )
 
@@ -20,6 +20,9 @@ func init() {
 type Game struct {
 	Board Board `json:board`
 }
+
+var depth = 0
+var limit = 3
 
 // Provide a generic handler for move requests. If no board state is
 // specified then a simple HTML form is provided to let users paste
@@ -61,90 +64,125 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 	// list of possible moves, but you'll want to make this choose a
 	// better move (probably using some game tree traversal algorithm
 	// like MinMax).
-	score, move := getBestMove(board Board, moves []Move)
+	score, move := getBestMove(board, moves)
 	//move := moves[rand.Intn(len(moves))]
 	fmt.Fprintf(w, "[%d,%d]", move.Where[0], move.Where[1], "score:", score)
 }
 
-func getScore(board Board, m Move)int{
+
+
+func getScore(board Board)int{
 	score := 0
+	if depth != limit {
+		if board.Next == Black{
+			depth += 1
+			score = getMaxMoveScore(board)
+		} else if board.Next == White {
+			depth += 1
+			score = getMinMoveScore(board)
+		}
+	} else{
+		x := 1
+		for x >= 1 && x <= 8{
+			y := 1
+			for y >= 1 && y <= 8{
+				if board.Pieces[y][x] == Black{
+					score += 2
 
-	x, y := move.Where[0], move.Where[1]
-	if x == 2 {
-		score -= 5
-	} else if x == 7 {
-		score -= 5
-	}
-	if y == 2 {
-		score -= 5
-	} else if y == 7 {
-		score -= 5
-	}
+					if x == 2 {
+						score -= 5
+					} else if x == 7 {
+						score -= 5
+					}
+					if y == 2 {
+						score -= 5
+					} else if y == 7 {
+						score -= 5
+					}
 
-	if (x == 2 && y == 2) | (x == 2 && y == 7) | (x == 7 && y == 2) | (x == 7 && y == 7) {
-		score -= 5
-	}
+					if (x == 2 && y == 2) || (x == 2 && y == 7) || (x == 7 && y == 2) || (x == 7 && y == 7) {
+						score -= 5
+					}
+					if (x == 1 && y == 2) || (x == 1 && y == 7) || (x == 2 && y == 1) || (x == 1 && y == 8) || (x == 7 && y == 1) || (x == 7 && y == 8) || (x == 8 && y == 2) || (x == 8 && y == 7) {
+						score -= 5
+					}
 
-	if x == 1 {
-		score += 5
-	} else if x == 8 {
-		score += 5
-	}
-	if y == 1 {
-		score += 5
-	} else if y == 8 {
-		score += 5
-	}
+					if x == 1 {
+						score += 5
+					} else if x == 8 {
+						score += 5
+					}
+					if y == 1 {
+						score += 5
+					} else if y == 8 {
+						score += 5
+					}
 
-	if (x == 1 && y == 1) | (x == 1 && y == 8) | (x == 8 && y == 1) | (x == 8 && y == 8) {
-		score += 5
-	}
+					if (x == 1 && y == 1) || (x == 1 && y == 8) || (x == 8 && y == 1) || (x == 8 && y == 8) {
+						score += 5
+					}
+				}
 
-	var captures []Position
-	for _, dir := range dirs {
-		captures = append(captures, b.findCaptures(m, dir)...)
+				if board.Next == White{
+					score *= -1
+				}
+				y += 1
+			}
+			x += 1
+		}
 	}
-	score += len(captures)
-
 	return score
 }
 
-getMaxMove(board Board, moves []Move)(int, Move){
-	top_score := -200
-	var best_move Move
-	for _, move := range moves {
-		score := getScore(board, move)
-		if score >= top_score{
-			top_score = score
-			best_move = move
+// turn black
+func getMaxMoveScore(board Board)int{
+	max_score := -200
+	//var best_move Move
+	for _, move := range board.ValidMoves() {
+		next_board, _ := board.After(move)
+		score := getScore(next_board)
+		if score >= max_score{
+			max_score = score
+			//best_move = move
 		}
 	}
-	return top_score, best_move
+	return max_score
 }
 
-getMinMove(board Board, moves []Move)(int, Move){
-	top_score := -200
-	var best_move Move
-	for _, move := range moves {
-		score := getScore(board, move)
-		if score >= top_score{
-			top_score = score
-			best_move = move
+// turn white
+func getMinMoveScore(board Board)int{
+	min_score := 200
+	//var best_move Move
+	for _, move := range board.ValidMoves() {
+		next_board, _ := board.After(move)
+		score := getScore(next_board)
+		if score <= min_score{
+			min_score = score
+			//best_move = move
 		}
 	}
-	return top_score, best_move
+	return min_score
 }
 
-getBestMove(board Board, moves []Move)(int, Move){
-	trial_board = b.Clone()
-	highscore, move = minMax(trial_board, moves)
-	return score, move
-}
 
-minMax(board Board, moves []Move)(int, Move){
-	for _, move := range moves{
-		
+func getBestMove(board Board, moves []Move)(int, Move){
+	i := 1
+	limit := 1
+	score := 0
+	var best_move Move
+	max_score := -500
+	for i <= limit {
+		for _, move := range moves{
+			next_board, _ := board.After(move)
+			score = getScore(next_board)
+			if score  > max_score {
+				best_move = move
+				max_score = score
+			}
+		}
+		i += 1
 	}
+	return max_score, best_move
 }
 
 type Piece int8
