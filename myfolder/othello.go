@@ -64,15 +64,16 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 	// list of possible moves, but you'll want to make this choose a
 	// better move (probably using some game tree traversal algorithm
 	// like MinMax).
-	score, move := getBestMove(board, moves)
+	move := getBestMove(board, moves)
 	//move := moves[rand.Intn(len(moves))]
-	fmt.Fprintf(w, "[%d,%d]", move.Where[0], move.Where[1], "score:", score)
+	fmt.Fprintf(w, "[%d,%d]", move.Where[0], move.Where[1])
 }
-
 
 
 func getScore(board Board)int{
 	score := 0
+	whitescore := 0
+	// depth, limit: global variable (var depth = 0, var limit = 3)
 	if depth != limit {
 		if board.Next == Black{
 			depth += 1
@@ -82,12 +83,12 @@ func getScore(board Board)int{
 			score = getMinMoveScore(board)
 		}
 	} else{
-		x := 1
-		for x >= 1 && x <= 8{
-			y := 1
-			for y >= 1 && y <= 8{
+		x := 0
+		for x >= 0 && x <= 7{
+			y := 0
+			for y >= 0 && y <= 7{
 				if board.Pieces[y][x] == Black{
-					score += 2
+					score += 3
 
 					if x == 2 {
 						score -= 5
@@ -104,7 +105,7 @@ func getScore(board Board)int{
 						score -= 5
 					}
 					if (x == 1 && y == 2) || (x == 1 && y == 7) || (x == 2 && y == 1) || (x == 1 && y == 8) || (x == 7 && y == 1) || (x == 7 && y == 8) || (x == 8 && y == 2) || (x == 8 && y == 7) {
-						score -= 5
+						score -= 10
 					}
 
 					if x == 1 {
@@ -119,13 +120,47 @@ func getScore(board Board)int{
 					}
 
 					if (x == 1 && y == 1) || (x == 1 && y == 8) || (x == 8 && y == 1) || (x == 8 && y == 8) {
-						score += 5
+						score += 20
 					}
 				}
+				if board.Pieces[y][x] == White{
+					whitescore += 3
 
-				if board.Next == White{
-					score *= -1
+					if x == 2 {
+						whitescore -= 5
+					} else if x == 7 {
+						whitescore -= 5
+					}
+					if y == 2 {
+						whitescore -= 5
+					} else if y == 7 {
+						whitescore -= 5
+					}
+
+					if (x == 2 && y == 2) || (x == 2 && y == 7) || (x == 7 && y == 2) || (x == 7 && y == 7) {
+						whitescore -= 5
+					}
+					if (x == 1 && y == 2) || (x == 1 && y == 7) || (x == 2 && y == 1) || (x == 1 && y == 8) || (x == 7 && y == 1) || (x == 7 && y == 8) || (x == 8 && y == 2) || (x == 8 && y == 7) {
+						whitescore -= 10
+					}
+
+					if x == 1 {
+						whitescore += 5
+					} else if x == 8 {
+						whitescore += 5
+					}
+					if y == 1 {
+						whitescore += 5
+					} else if y == 8 {
+						whitescore += 5
+					}
+
+					if (x == 1 && y == 1) || (x == 1 && y == 8) || (x == 8 && y == 1) || (x == 8 && y == 8) {
+						whitescore += 20
+					}
 				}
+				score -= whitescore
+				whitescore = 0
 				y += 1
 			}
 			x += 1
@@ -137,13 +172,11 @@ func getScore(board Board)int{
 // turn black
 func getMaxMoveScore(board Board)int{
 	max_score := -200
-	//var best_move Move
 	for _, move := range board.ValidMoves() {
 		next_board, _ := board.After(move)
 		score := getScore(next_board)
 		if score >= max_score{
 			max_score = score
-			//best_move = move
 		}
 	}
 	return max_score
@@ -152,37 +185,30 @@ func getMaxMoveScore(board Board)int{
 // turn white
 func getMinMoveScore(board Board)int{
 	min_score := 200
-	//var best_move Move
 	for _, move := range board.ValidMoves() {
 		next_board, _ := board.After(move)
 		score := getScore(next_board)
 		if score <= min_score{
 			min_score = score
-			//best_move = move
 		}
 	}
 	return min_score
 }
 
 
-func getBestMove(board Board, moves []Move)(int, Move){
-	i := 1
-	limit := 1
+func getBestMove(board Board, moves []Move)Move{
 	score := 0
 	var best_move Move
 	max_score := -500
-	for i <= limit {
-		for _, move := range moves{
-			next_board, _ := board.After(move)
-			score = getScore(next_board)
-			if score  > max_score {
-				best_move = move
-				max_score = score
-			}
+	for _, move := range moves{
+		next_board, _ := board.After(move)
+		score = getScore(next_board)
+		if score  > max_score {
+			best_move = move
+			max_score = score
 		}
-		i += 1
 	}
-	return max_score, best_move
+	return best_move
 }
 
 type Piece int8
